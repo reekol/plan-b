@@ -59,8 +59,7 @@ nk_destroy(){
 }
 
 nk_reboot(){
-    sleep 1
-#    sudo reboot
+    sudo reboot
 }
 
 nk_action(){
