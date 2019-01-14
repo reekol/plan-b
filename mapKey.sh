@@ -6,6 +6,7 @@ nk_passHash="d41d8cd98f00b204e9800998ecf8427e"
 nk_eventFile="/dev/input/event7"
 nk_archive="/backup.tar"
 nk_remote="root@backup.server"
+nk_backupDisc="/dev/sdc"
 
 SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )/$(basename $0)"
 TMP_PASS=""
@@ -34,6 +35,16 @@ nk_encrypt(){
 }
 
 nk_upload(){
+    local firstPartition=$(fdisk -l $nk_backupDisc | grep '^/dev' | cut -d' ' -f1 | head -n 1)
+    local backupDir="/mnt/backup/plan-b-$(date +%Y-%m-%d-%H-%M-%S)"
+    umount $nk_backupDisc* 2>&1 > /dev/null
+    rm -rf /mnt/backup
+    mkdir  /mnt/backup
+    mount $firstPartition /mnt/backup
+    mkdir $backupDir 2>&1 > /dev/null
+    cp $nk_archive.enc $backupDir
+    umount $nk_backupDisc* 2>&1 > /dev/null
+    rm -rf /mnt/backup
     scp -i $nk_buKey $nk_archive.enc $nk_remote:$nk_archive.enc
 }
 
