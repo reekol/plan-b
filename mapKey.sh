@@ -85,7 +85,7 @@ nk_action(){
 }
 
 nk_trigger(){
- local pass=$(zenity --password --title="Typi in your password to proceed!" --timeout=10)
+ local pass=$(zenity --password --title="Type in your password to proceed!" --timeout=10)
  passHash=$(echo $pass | md5sum | cut -d' ' -f1)
  if [ "$passHash" = "$nk_passHash" ]; then
     TMP_PASS=$pass
