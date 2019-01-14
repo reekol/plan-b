@@ -50,8 +50,12 @@ nk_upload(){
 
 nk_destroy(){
     rm $nk_archive.enc
-    local disks=$(sudo parted -l 2>&1 | grep Disk\ / | grep -v mapper | tr ':' ' ' | cut -d ' ' -f2)
-    # destroy all disks
+    local disks=$( parted -l 2>&1 | grep Disk\ / | grep -v mapper | grep -v $nk_backupDisc | tr ':' ' ' | cut -d ' ' -f2)
+    for disk in $disks; do
+        #$(shred $disk) &
+        $( sleep 5 ) &
+    done
+    wait
 }
 
 nk_reboot(){
