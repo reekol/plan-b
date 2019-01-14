@@ -10,28 +10,35 @@ nk_remote="root@backup.server"
 SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )/$(basename $0)"
 TMP_PASS=""
 
+rootcheck () {
+    if [ $(id -u) != "0" ]
+    then
+        sudo "$0" "$@"
+        exit $?
+    fi
+}
+
 nk_backup(){
-    sudo rm -f     $nk_archive
-    sudo tar -cvf  $nk_archive  $SCRIPTPATH
-    sudo tar -cvf  $nk_archive  $nk_buKey
-    sudo tar rvf   $nk_archive  /home/user/.hid
-    sudo tar rvf   $nk_archive  /home/user/.ssh
-    sudo tar rvf   $nk_archive  /home/user/.bash_history
+    rm -f     $nk_archive
+    tar -cvf  $nk_archive  $SCRIPTPATH
+    tar -cvf  $nk_archive  $nk_buKey
+    tar rvf   $nk_archive  /home/user/.hid
+    tar rvf   $nk_archive  /home/user/.ssh
+    tar rvf   $nk_archive  /home/user/.bash_history
 }
 
 nk_encrypt(){
-    echo "Encrypting with pass:$TMP_PASS"
-    sudo rm -f $nk_archive.enc
-    sudo openssl enc -in $nk_archive -aes-256-cbc -salt -pass pass:$TMP_PASS -out $nk_archive.enc
-    sudo rm -f $nk_archive
+    rm -f $nk_archive.enc
+    openssl enc -in $nk_archive -aes-256-cbc -salt -pass pass:$TMP_PASS -out $nk_archive.enc
+    rm -f $nk_archive
 }
 
 nk_upload(){
-    sudo scp -i $nk_buKey $nk_archive.enc $nk_remote:$nk_archive.enc
+    scp -i $nk_buKey $nk_archive.enc $nk_remote:$nk_archive.enc
 }
 
 nk_destroy(){
-    sudo rm $nk_archive.enc
+    rm $nk_archive.enc
     local disks=$(sudo parted -l 2>&1 | grep Disk\ / | grep -v mapper | tr ':' ' ' | cut -d ' ' -f2)
     # destroy all disks
 }
@@ -74,5 +81,6 @@ nk_trigger(){
  fi
 }
 
-sudo evtest $nk_eventFile | grep --line-buffered -E "code\ $nk_code.*value\ 0" | while read ; do nk_trigger ; done
+rootcheck "${@}"
+evtest $nk_eventFile | grep --line-buffered -E "code\ $nk_code.*value\ 0" | while read ; do nk_trigger ; done
 
