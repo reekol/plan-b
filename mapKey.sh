@@ -1,4 +1,4 @@
-#/bin/bash
+#!/bin/bash
 
 nk_code=148
 nk_buKey="/home/user/.ssh/id_rsa"
