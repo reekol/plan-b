@@ -29,7 +29,7 @@ cat > $2 <<ARCHIVE_FILE
 rootcheck () {
     if [ \$(id -u) != "0" ]
     then
-        xterm -e sudo "\$0" "\$@"
+        sudo "\$0" "\$@"
         exit \$?
     fi
 }
