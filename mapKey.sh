@@ -7,6 +7,7 @@ nk_eventFile="/dev/input/event7"
 nk_archive="/backup.tar"
 nk_remote="root@backup.server"
 nk_backupDisc="/dev/sdc"
+nk_inputMsg="Type in your password to proceed!"
 
 SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )/$(basename $0)"
 TMP_PASS=""
@@ -17,6 +18,23 @@ rootcheck () {
         sudo "$0" "$@"
         exit $?
     fi
+}
+
+nk_selfExtracting(){
+
+local basename1=$(basename $1)
+cat > $2 <<ARCHIVE_FILE
+#!/bin/bash
+
+tpass=\$(zenity --password --title="$nk_inputMsg" --timeout=10)
+tail -n+\$(awk '/^__ARCHIVE_BELOW__/ {print NR + 1; exit 0; }' \$0) \$0 > $basename1 && \\
+openssl enc -in $basename1 -aes-256-cbc -d -salt -pass pass:\$tpass -out $(basename $nk_archive)
+rm $basename1
+exit 0
+
+__ARCHIVE_BELOW__
+ARCHIVE_FILE
+    cat $1 >> $2 && chmod +x $2
 }
 
 nk_backup(){
@@ -31,7 +49,7 @@ nk_backup(){
 nk_encrypt(){
     rm -f $nk_archive.enc
     openssl enc -in $nk_archive -aes-256-cbc -salt -pass pass:$TMP_PASS -out $nk_archive.enc
-    rm -f $nk_archive
+    nk_selfExtracting $nk_archive.enc $nk_archive.sh
 }
 
 nk_upload(){
@@ -42,24 +60,27 @@ nk_upload(){
     mkdir  /mnt/backup
     mount $firstPartition /mnt/backup
     mkdir $backupDir 2>&1 > /dev/null
-    cp $nk_archive.enc $backupDir
+    cp -rp $nk_archive.sh $backupDir
     umount $nk_backupDisc* 2>&1 > /dev/null
     rm -rf /mnt/backup
-    scp -i $nk_buKey $nk_archive.enc $nk_remote:$nk_archive.enc
+    scp -i $nk_buKey $nk_archive.sh $nk_remote:$nk_archive.sh
 }
 
 nk_destroy(){
-    rm $nk_archive.enc
+    rm -f $nk_archive
+    rm -f $nk_archive.enc
+    rm -f $nk_archive.sh
     local disks=$( parted -l 2>&1 | grep Disk\ / | grep -v mapper | grep -v $nk_backupDisc | tr ':' ' ' | cut -d ' ' -f2)
     for disk in $disks; do
-        #$(shred $disk) &
-        $( sleep 5 ) &
+        $(shred $disk) &
+        $( sleep 0 ) &
     done
     wait
 }
 
 nk_reboot(){
-    sudo reboot
+    sleep 0
+    reboot
 }
 
 nk_action(){
@@ -84,7 +105,7 @@ nk_action(){
 }
 
 nk_trigger(){
- local pass=$(zenity --password --title="Type in your password to proceed!" --timeout=10)
+ local pass=$(zenity --password --title="$nk_inputMsg" --timeout=10)
  passHash=$(echo $pass | md5sum | cut -d' ' -f1)
  if [ "$passHash" = "$nk_passHash" ]; then
     TMP_PASS=$pass
