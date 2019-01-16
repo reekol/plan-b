@@ -26,7 +26,18 @@ local basename1=$(basename $1)
 cat > $2 <<ARCHIVE_FILE
 #!/bin/bash
 
-tpass=\$(zenity --password --title="$nk_inputMsg" --timeout=10)
+rootcheck () {
+    if [ \$(id -u) != "0" ]
+    then
+        xterm -e sudo "\$0" "\$@"
+        exit \$?
+    fi
+}
+
+rootcheck
+
+echo -n "$nk_inputMsg"
+read -s tpass
 tail -n+\$(awk '/^__ARCHIVE_BELOW__/ {print NR + 1; exit 0; }' \$0) \$0 > $basename1 && \\
 openssl enc -in $basename1 -aes-256-cbc -d -salt -pass pass:\$tpass -out $(basename $nk_archive)
 rm $basename1
