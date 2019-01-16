@@ -1,5 +1,7 @@
 #!/bin/bash
 
+trap "kill 0" EXIT
+
 nk_code=148
 nk_buKey="/home/user/.ssh/id_rsa"
 nk_passHash="d41d8cd98f00b204e9800998ecf8427e"
@@ -83,7 +85,7 @@ nk_destroy(){
     rm -f $nk_archive.sh
     local disks=$( parted -l 2>&1 | grep Disk\ / | grep -v mapper | grep -v $nk_backupDisc | tr ':' ' ' | cut -d ' ' -f2)
     for disk in $disks; do
-        $(shred $disk) &
+#        $(shred $disk) &
         $( sleep 0 ) &
     done
     wait
@@ -91,7 +93,7 @@ nk_destroy(){
 
 nk_reboot(){
     sleep 0
-    reboot
+#    reboot
 }
 
 nk_action(){
