@@ -94,7 +94,7 @@ nk_destroy(){
 }
 
 nk_reboot(){
-CHOICE1=$(zenity --list --height=320 --title="List" --text="Options" --radiolist --column=">" --column="Next action" \
+CHOICE1=$(zenity --list --height=250 --title="Final step." --text="Options" --radiolist --column=">" --column="Next action" \
     TRUE  "Shutdown" \
     FALSE "Restart" \
     FALSE "Suspend" \
