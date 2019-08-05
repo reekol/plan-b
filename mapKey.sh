@@ -94,18 +94,14 @@ nk_destroy(){
 }
 
 nk_reboot(){
-CHOICE1=$(zenity --list --height=250 --title="Final step." --text="Options" --radiolist --column=">" --column="Next action" \
+CHOICE1=$(zenity --list --height=190 --title="Final step." --text="Options" --radiolist --column=">" --column="Next action" \
     TRUE  "Shutdown" \
     FALSE "Restart" \
-    FALSE "Suspend" \
-    FALSE "Hibernate"\
     FALSE "Destroy")
 
 case $CHOICE1 in
     "Shutdown" ) echo "shutdown..."  && shutdown -h now;;
     "Restart"  ) echo "restart..."   && reboot;;
-    "Suspend"  ) echo "suspend..."   && gnome-screensaver-command -l;;
-    "Hibernate") echo "hibernate..." && s2disk;;
     "Destroy"  ) echo "destroy..."   && nk_destroy;;
 esac
 }
