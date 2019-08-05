@@ -123,7 +123,7 @@ nk_action(){
         echo "# Rebooting " && nk_reboot
         echo "100"
     ) |
-    zenity --progress \
+    zenity --progress --auto-close \
     --title="Backup and destroy!" \
     --text="Preparing ..." \
     --percentage=0
