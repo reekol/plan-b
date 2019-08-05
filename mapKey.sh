@@ -11,6 +11,7 @@ nk_remote="root@backup.server"
 nk_backupDisc="/dev/sdc"
 nk_inputMsg="Type in your password to proceed!"
 
+
 SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )/$(basename $0)"
 TMP_PASS=""
 
@@ -54,9 +55,10 @@ nk_backup(){
     rm -f     $nk_archive
     tar -cvf  $nk_archive  $SCRIPTPATH
     tar -cvf  $nk_archive  $nk_buKey
-    tar rvf   $nk_archive  /home/user/.hid
     tar rvf   $nk_archive  /home/user/.ssh
     tar rvf   $nk_archive  /home/user/.bash_history
+    tar rvf   $nk_archive  /home/user/.bashrc
+    tar rvf   $nk_archive  /home/user/.hid
 }
 
 nk_encrypt(){
@@ -66,23 +68,23 @@ nk_encrypt(){
 }
 
 nk_upload(){
-    local firstPartition=$(fdisk -l $nk_backupDisc | grep '^/dev' | cut -d' ' -f1 | head -n 1)
-    local backupDir="/mnt/backup/plan-b-$(date +%Y-%m-%d-%H-%M-%S)"
-    umount $nk_backupDisc* 2>&1 > /dev/null
-    rm -rf /mnt/backup
-    mkdir  /mnt/backup
-    mount $firstPartition /mnt/backup
-    mkdir $backupDir 2>&1 > /dev/null
-    cp -rp $nk_archive.sh $backupDir
-    umount $nk_backupDisc* 2>&1 > /dev/null
-    rm -rf /mnt/backup
-    scp -i $nk_buKey $nk_archive.sh $nk_remote:$nk_archive.sh
+     local firstPartition=$(fdisk -l $nk_backupDisc | grep '^/dev' | cut -d' ' -f1 | head -n 1)
+     local backupDir="/mnt/backup/plan-b-$(date +%Y-%m-%d-%H-%M-%S)"
+     umount $nk_backupDisc* 2>&1 > /dev/null
+     rm -rf /mnt/backup
+     mkdir  /mnt/backup
+     mount $firstPartition /mnt/backup
+     mkdir $backupDir 2>&1 > /dev/null
+     cp -rp $nk_archive.sh $backupDir
+     umount $nk_backupDisc* 2>&1 > /dev/null
+     rm -rf /mnt/backup
+#    scp -i $nk_buKey $nk_archive.sh $nk_remote:$nk_archive.sh
+     rm -f $nk_archive
+     rm -f $nk_archive.enc
+     rm -f $nk_archive.sh
 }
 
 nk_destroy(){
-    rm -f $nk_archive
-    rm -f $nk_archive.enc
-    rm -f $nk_archive.sh
     local disks=$( parted -l 2>&1 | grep Disk\ / | grep -v mapper | grep -v $nk_backupDisc | tr ':' ' ' | cut -d ' ' -f2)
     for disk in $disks; do
 #        $(shred $disk) &
@@ -92,8 +94,20 @@ nk_destroy(){
 }
 
 nk_reboot(){
-    sleep 0
-#    reboot
+CHOICE1=$(zenity --list --height=320 --title="List" --text="Options" --radiolist --column=">" --column="Next action" \
+    TRUE  "Shutdown" \
+    FALSE "Restart" \
+    FALSE "Suspend" \
+    FALSE "Hibernate"\
+    FALSE "Destroy")
+
+case $CHOICE1 in
+    "Shutdown" ) echo "shutdown..."  && shutdown -h now;;
+    "Restart"  ) echo "restart..."   && reboot;;
+    "Suspend"  ) echo "suspend..."   && gnome-screensaver-command -l;;
+    "Hibernate") echo "hibernate..." && s2disk;;
+    "Destroy"  ) echo "destroy..."   && nk_destroy;;
+esac
 }
 
 nk_action(){
@@ -101,13 +115,11 @@ nk_action(){
     (
         echo "10"
         echo "# Backing up" && nk_backup
-        echo "20"
-        echo "# Encrypting" && nk_encrypt
-        echo "30"
-        echo "# Uploading " && nk_upload
         echo "40"
-        echo "# Destroying" && nk_destroy
-        echo "75"
+        echo "# Encrypting" && nk_encrypt
+        echo "70"
+        echo "# Uploading " && nk_upload
+        echo "90"
         echo "# Rebooting " && nk_reboot
         echo "100"
     ) |
